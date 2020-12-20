@@ -25,9 +25,19 @@ const userReducer = (state, action) => {
     }
 };
 
+const projectsReducer = (state, action) => {
+    switch (action.type) {
+        case "SET_PROJECTS":
+            return action.value;
+        default:
+            return state;
+    }
+};
+
 const combineReducers = (state, action) => ({
     user: userReducer(state.user, action),
     token: tokenReducer(state.token, action),
+    projects: projectsReducer(state.projects, action),
 })
 
 const StateContext = createContext({});

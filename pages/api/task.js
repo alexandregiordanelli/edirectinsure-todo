@@ -44,7 +44,7 @@ handler.delete(async (req, res) => {
     await req.db.collection('tasks').deleteOne({_id: new ObjectID(req.body.id)});
 
     const project = await req.db.collection('projects').findOne({_id: new ObjectID(req.body.projectId)})
-    project.tasks = project.tasks.filter(x => x == req.body.id)
+    project.tasks = project.tasks.filter(x => x != req.body.id)
 
     await req.db.collection('projects').updateOne({_id: new ObjectID(req.body.projectId)},  { $set: project });
 

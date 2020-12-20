@@ -18,11 +18,25 @@ const Template = (props) => {
         persistState('edirect', state)
     }, [state])
 
-    return (
-        <>
-            {props.children}
-        </>
-    )
+    useEffect(()=>{
+        if(state.user?.projects){
+            const p = state.user.projects.map(x => {
+                var myHeaders = new Headers();
+                myHeaders.append("x-auth", state.token);
+
+                return fetch(`/api/project?id=${x}`, {
+                    method: 'GET',
+                    headers: myHeaders
+                })
+                .then(response => response.json())
+            })
+            Promise.all(p).then(x => {
+                dispatch({type: 'SET_PROJECTS', value: x})
+            })
+        }
+    }, [state.user?.projects])
+
+    return props.children
 }
 
 
