@@ -8,6 +8,7 @@ const Template = (props) => {
     const router = useRouter()
 
     useEffect(()=>{
+        console.log("passou aqui")
         if(state.token)
             router.push('/user')
         else if(router.asPath == '/user')
@@ -20,10 +21,10 @@ const Template = (props) => {
 
     useEffect(()=>{
         if(state.user?.projects){
-            const p = state.user.projects.map(x => {
-                var myHeaders = new Headers();
-                myHeaders.append("x-auth", state.token);
+            var myHeaders = new Headers();
+            myHeaders.append("x-auth", state.token);
 
+            const p = state.user.projects.map(x => {
                 return fetch(`/api/project?id=${x}`, {
                     method: 'GET',
                     headers: myHeaders
@@ -32,9 +33,44 @@ const Template = (props) => {
             })
             Promise.all(p).then(x => {
                 dispatch({type: 'SET_PROJECTS', value: x})
+                const t = []
+                x.forEach(y => {
+                    const tasks = y.tasks?.map(z => {
+                        return fetch(`/api/task?id=${z}`, {
+                            method: 'GET',
+                            headers: myHeaders
+                        }).then(response => response.json())
+                    })
+                    if(tasks)
+                        t.push(...tasks)
+                })
+                Promise.all(t).then(x => {
+                    dispatch({type: 'SET_TASKS', value: x})
+                })
             })
         }
     }, [state.user?.projects])
+
+    // useEffect(()=>{
+    //     if(state.projects){
+    //         const p = []
+    //         var myHeaders = new Headers();
+    //         myHeaders.append("x-auth", state.token);
+
+    //         state.projects.forEach(x => {
+    //             x.tasks?.forEach(y => {
+    //                 p.push(fetch(`/api/task?id=${y}`, {
+    //                     method: 'GET',
+    //                     headers: myHeaders
+    //                 })
+    //                 .then(response => response.json()))
+    //             })                
+    //         })
+    //         Promise.all(p).then(x => {
+    //             dispatch({type: 'SET_TASKS', value: x})
+    //         })
+    //     }
+    // }, [state.projects])
 
     return props.children
 }

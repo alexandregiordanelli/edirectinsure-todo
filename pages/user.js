@@ -85,7 +85,17 @@ const ProjectItem = (props) => {
 
     if(edit)
         return <FormProject {...props} edit={true} cb={() => setEdit(false)}/>
-    return <li>{props.project} <button onClick={()=>setEdit(true)}>edit</button><button onClick={remove}>delete</button></li>
+    return (
+        <li>{props.project} 
+            <button onClick={()=>setEdit(true)}>edit</button>
+            <button onClick={remove}>delete</button>
+            <ul>
+                {state.tasks?.filter(x => props._id == x.project).map(x => {
+                    return <li>{JSON.stringify(x)}</li>
+                })}
+            </ul>
+        </li>
+    )
 }
 
 const UserPage = () => {
@@ -106,7 +116,7 @@ const UserPage = () => {
                 <FormProject/>
 
                 <ul>
-                    {state.projects?.map(x => <ProjectItem {...x}/>)}
+                    {state.projects?.map((x, i) => <ProjectItem key={i} {...x}/>)}
                 </ul>
 
             </>

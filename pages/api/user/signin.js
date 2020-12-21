@@ -28,10 +28,7 @@ handler.post(async (req, res) => {
         res.setHeader('x-auth', token)
         res.json({
             token,
-            user: {
-                id: user._id,
-                email: user.email,
-            },
+            user,
         });
     } catch (err) {
         res.status(Status.INTERNAL_SERVER_ERROR).json({ error: err.message });

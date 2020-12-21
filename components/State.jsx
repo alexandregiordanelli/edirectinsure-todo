@@ -2,7 +2,9 @@ import React, {createContext, useContext, useReducer} from 'react';
 
 const initialState = {
     user: null,
-    token: null
+    token: null,
+    projects: [],
+    tasks: []
 }
 
 const tokenReducer = (state, action) => {
@@ -34,10 +36,20 @@ const projectsReducer = (state, action) => {
     }
 };
 
+const tasksReducer = (state, action) => {
+    switch (action.type) {
+        case "SET_TASKS":
+            return action.value;
+        default:
+            return state;
+    }
+};
+
 const combineReducers = (state, action) => ({
     user: userReducer(state.user, action),
     token: tokenReducer(state.token, action),
     projects: projectsReducer(state.projects, action),
+    tasks : tasksReducer(state.tasks, action)
 })
 
 const StateContext = createContext({});
