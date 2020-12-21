@@ -39,13 +39,14 @@ export const FormEmailPassword = (props) => {
 
     return (
         <>
+            <h1>{route}</h1>
             <form onSubmit={submit}>
-                <input type="text" onChange={e => setEmail(e.target.value)} value={email} />
-                <input type="password" onChange={e => setPassword(e.target.value)} value={password} />
+                <input type="text" placeholder="email" onChange={e => setEmail(e.target.value)} value={email} />
+                <input type="password" placeholder="password" onChange={e => setPassword(e.target.value)} value={password} />
                 <input type="submit" value={route} />
                 {errMsg && <p>{errMsg}</p>}
             </form>
-            <Link href={`/${otherRoute}`}><a>{otherRoute}</a></Link>
+            <Link href={`/${otherRoute}`}><a>Or click here if you want to {otherRoute}</a></Link>
             <style jsx>{`
             
             `}</style>
