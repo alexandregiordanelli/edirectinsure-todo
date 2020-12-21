@@ -39,7 +39,6 @@ const Form = (props) => {
               })
               .then(response => response.json())
               .then(result => {
-                  console.log(result)
                   dispatch({type: "CHANGE_USER", value: result})
               })
         })
@@ -50,8 +49,23 @@ const Form = (props) => {
 
     return (
         <>
-            <input type="text" value={name} onChange={e => setName(e.target.value)}/>
-            <button onClick={create}>Create</button>
+            <div>
+                <input type="text" value={name} placeholder={props.type + ' name'} onChange={e => setName(e.target.value)}/>
+                <button onClick={create}>{props.edit? 'update': 'create ' + props.type}</button>
+                {props.edit && <button onClick={()=>props.cb()}>cancel</button>}
+            </div>
+            <style jsx>{`
+            div{
+                display: flex;
+                flex: 1;
+            }
+            button{
+                flex: 1;
+            }
+            input {
+                flex: 3;
+            }
+            `}</style>
         </>
     )
 }
@@ -80,28 +94,55 @@ const ProjectItem = (props) => {
               })
               .then(x => x.json())
               .then(y => {
-                  console.log(y)
                   dispatch({type: "CHANGE_USER", value: y})
               })
         })
     }
 
     return (
-        <li>{edit? <Form type="project" {...props} edit={true} cb={() => setEdit(false)}/>: props.project} 
-            <button onClick={()=>setEdit(true)}>edit</button>
-            <button onClick={remove}>delete</button>
+        <>
+            <div className="header">
+                {edit? <Form type="project" {...props} edit={true} cb={() => setEdit(false)}/>: <span>{props.project}</span>} 
+                {!edit && <div className="flex">
+                    <button onClick={()=>setEdit(true)}>edit</button>
+                    <button onClick={remove}>delete</button>
+                </div>}
+            </div>
+            <style jsx>{`
+            .flex {
+                display: flex;
+            }
+            .header {
+                background: black;
+                display: flex;
+                justify-content: space-between;
+            }
+            span{
+                font-size: 14px;
+                color: white;
+                line-height: 30px;
+            }
+            ul {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+            }  
+            button {
+                line-height: 30px;
+            }
+            `}</style>
             <ul>
-                <Form type="task" projectId={props._id}/>
-                    {state.tasks?.filter(x => x.project == props._id).map((x, i) => <TaskItem key={i} {...x} />)}
+                <li><Form type="task" projectId={props._id}/></li>
+                {state.tasks?.filter(x => x.project == props._id).map((x, i) => <li><TaskItem key={i} {...x} /></li>)}
             </ul>
-        </li>
+        </>
     )
 }
 
     const TaskItem = (props) => {
         const [state, dispatch] = useStateValue()
         const [edit, setEdit] = useState(false)
-        console.log(props)
+        const [checked, setChecked] = useState(false)
         const remove = () => {
             var myHeaders = new Headers();
             myHeaders.append("x-auth", state.token);
@@ -132,12 +173,88 @@ const ProjectItem = (props) => {
 
 
     return (
-        <li>{edit? <Form type="task" {...props} edit={true} cb={() => setEdit(false)}/>: props.task} 
-            <button onClick={()=>setEdit(true)}>edit</button>
-            <button onClick={remove}>delete</button>
-        </li>
+        <>
+            <div className="header">
+                {!edit && <input id={props._id} disabled={checked} type="checkbox" checked={checked} onChange={e=> setChecked(e.target.checked)}/>}
+                {edit? <Form type="task" {...props} edit={true} cb={() => setEdit(false)}/>: <label htmlFor={props._id}>{props.task}</label>} 
+                {!edit && !checked && <div className="flex">
+                    <button onClick={()=>setEdit(true)}>edit</button>
+                    <button onClick={remove}>delete</button>
+                </div>}
+            </div>
+            <style jsx>{`
+            .flex {
+                display: flex;
+            }
+            .header {
+                display: flex;
+                justify-content: space-between;
+            }
+            label{
+                color: white;
+                line-height: 30px;
+            }
+            ul {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+            }  
+            button {
+                line-height: 30px;
+            }
+            `}</style>
+        </>
+        
     )
 }
+
+const Header = props => 
+    <>
+    <div className="header">
+        <h1>{props.email}</h1>
+        <button onClick={()=>{
+            props.dispatch({type: 'CLEAR_TOKEN'})
+            props.dispatch({type: 'CHANGE_USER', value: null})
+        }}>sign out</button>
+    </div>
+    <style jsx>{`
+    .header {
+        background: black;
+        display: flex;
+        justify-content: space-between;
+    }    
+    h1 {
+        margin: 0;
+        color: white;
+    }
+    button {
+        line-height: 30px;
+    }
+    `}</style>
+    </>
+
+const Projects = props =>
+<>
+    <ul className="flex-container">
+        <li className="flex-item"><Form type="project"/></li>
+        {props.projects?.map((x, i) => <li className="flex-item"><ProjectItem key={i} {...x}/></li>)}
+    </ul>
+    <style jsx>{`
+    .flex-container {
+        padding: 0;
+        margin: 0;
+        list-style: none;
+        display: flex;
+        flex-wrap: wrap;
+    }    
+    .flex-item{
+        background: tomato;
+        width: calc(33% - 18px);
+        margin: 10px;
+        color: white;
+    }
+    `}</style>
+</>
 
 const UserPage = () => {
     const [state, dispatch] = useStateValue();
@@ -145,20 +262,21 @@ const UserPage = () => {
     if(state.user){
         return (
             <>
-                <h1>
-                    {state.user.email}
-                </h1>
-
-                <button onClick={()=>{
-                    dispatch({type: 'CLEAR_TOKEN'})
-                    dispatch({type: 'CHANGE_USER', value: null})
-                }}>sign out</button>
+                <style jsx global>{`
+                    *{
+                        font-size: 14px;
+                        line-height: 30px;
+                        font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto, Oxygen,Ubuntu,Cantarell,Fira Sans,Droid Sans,Helvetica Neue, sans-serif;
+                    }
+               body{
+                   margin: 0;
+                   padding: 0;
+               }
+                `}</style>
+                <Header dispatch={dispatch} email={state.user.email}/>
                 
-                <Form type="project"/>
-
-                <ul>
-                    {state.projects?.map((x, i) => <ProjectItem key={i} {...x}/>)}
-                </ul>
+                <Projects projects={state.projects}/>
+                
 
             </>
         )
