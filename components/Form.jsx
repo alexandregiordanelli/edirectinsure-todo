@@ -29,6 +29,7 @@ export const Form = (props) => {
         fetch("api/" + props.type, requestOptions)
             .then(response => response.json())
             .then(result => {
+                setName('')
                 if (props.cb)
                     props.cb();
                 fetch("/api/user", {
