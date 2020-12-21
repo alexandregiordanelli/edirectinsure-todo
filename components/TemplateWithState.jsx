@@ -1,5 +1,5 @@
-import { StateProvider, useStateValue, persistState } from '../components/State'
-import { useState, useEffect } from 'react'
+import { StateProvider, useStateValue, persistState } from './State'
+import { useEffect } from 'react'
 import { useRouter } from 'next/router'
 
 
