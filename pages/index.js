@@ -1,230 +1,291 @@
-import Head from 'next/head'
+import { useEffect, useState } from 'react'
+import { StateProvider, useStateValue } from '../components/State'
+import Dynamic from '../components/Dynamic'
+import { FormEmailPassword } from '../components/FormEmailPassword'
 
-export default function Home({ isConnected }) {
-  return (
-    <div className="container">
-      <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+const Form = (props) => {
+    const [state, dispatch] = useStateValue()
+    const [name, setName] = useState(props[props.type]? props[props.type]: '')
 
-      <main>
-        <h1 className="title">
-          Welcome to <a href="https://nextjs.org">Next.js with MongoDB!</a>
-        </h1>
+    const create = () => {
+        var myHeaders = new Headers();
+        myHeaders.append("x-auth", state.token);
 
-        {isConnected ? (
-          <h2 className="subtitle">You are connected to MongoDB</h2>
-        ) : (
-          <h2 className="subtitle">
-            You are NOT connected to MongoDB. Check the <code>README.md</code>{' '}
-            for instructions.
-          </h2>
-        )}
-
-        <p className="description">
-          Get started by editing <code>pages/index.js</code>
-        </p>
-
-        <div className="grid">
-          <a href="https://nextjs.org/docs" className="card">
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className="card">
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className="card"
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className="card"
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className="logo" />
-        </a>
-      </footer>
-
-      <style jsx>{`
-        .container {
-          min-height: 100vh;
-          padding: 0 0.5rem;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
+        var urlencoded = new URLSearchParams();
+        urlencoded.append(props.type, name);
+        if(props.type == "task"){
+            urlencoded.append("projectId", props.project || props.projectId);
         }
 
-        main {
-          padding: 5rem 0;
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
+
+        let requestOptions = {
+            method: 'POST',
+            headers: myHeaders,
+            body: urlencoded
+        };
+
+        if(props.edit){
+            urlencoded.append("id", props._id);
+            requestOptions.method = 'PUT'
         }
 
-        footer {
-          width: 100%;
-          height: 100px;
-          border-top: 1px solid #eaeaea;
-          display: flex;
-          justify-content: center;
-          align-items: center;
+        fetch("api/"+props.type, requestOptions)
+        .then(response => response.json())
+        .then(result => {
+            if(props.cb) props.cb()
+            fetch("/api/user", {
+                method: 'GET',
+                headers: myHeaders
+              })
+              .then(response => response.json())
+              .then(result => {
+                  dispatch({type: "CHANGE_USER", value: result})
+              })
+        })
+        .catch(error => console.log('error', error));
+
+
+    }
+
+    return (
+        <>
+            <div>
+                <input type="text" value={name} placeholder={props.type + ' name'} onChange={e => setName(e.target.value)}/>
+                <button onClick={create}>{props.edit? 'update': 'create ' + props.type}</button>
+                {props.edit && <button onClick={()=>props.cb()}>cancel</button>}
+            </div>
+            <style jsx>{`
+            div{
+                display: flex;
+                flex: 1;
+            }
+            button{
+                flex: 1;
+            }
+            input {
+                flex: 3;
+            }
+            `}</style>
+        </>
+    )
+}
+
+const ProjectItem = (props) => {
+    const [state, dispatch] = useStateValue()
+    const [edit, setEdit] = useState(false)
+
+    const remove = () => {
+        var myHeaders = new Headers();
+        myHeaders.append("x-auth", state.token);
+
+        var urlencoded = new URLSearchParams();
+        urlencoded.append("id", props._id);
+
+        fetch("/api/project", {
+            method: 'DELETE',
+            headers: myHeaders,
+            body: urlencoded,
+        })
+        .then(response => response.json())
+        .then(result => {
+            fetch("/api/user", {
+                method: 'GET',
+                headers: myHeaders
+              })
+              .then(x => x.json())
+              .then(y => {
+                  dispatch({type: "CHANGE_USER", value: y})
+              })
+        })
+    }
+
+    return (
+        <>
+            <div className="header">
+                {edit? <Form type="project" {...props} edit={true} cb={() => setEdit(false)}/>: <span>{props.project}</span>} 
+                {!edit && <div className="flex">
+                    <button onClick={()=>setEdit(true)}>edit</button>
+                    <button onClick={remove}>delete</button>
+                </div>}
+            </div>
+            <style jsx>{`
+            .flex {
+                display: flex;
+            }
+            .header {
+                background: black;
+                display: flex;
+                justify-content: space-between;
+            }
+            span{
+                font-size: 14px;
+                color: white;
+                line-height: 30px;
+            }
+            ul {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+            }  
+            button {
+                line-height: 30px;
+            }
+            `}</style>
+            <ul>
+                <li><Form type="task" projectId={props._id}/></li>
+                {state.tasks?.filter(x => x.project == props._id).map((x, i) => <li><TaskItem key={i} {...x} /></li>)}
+            </ul>
+        </>
+    )
+}
+
+    const TaskItem = (props) => {
+        const [state, dispatch] = useStateValue()
+        const [edit, setEdit] = useState(false)
+        const [checked, setChecked] = useState(false)
+        const remove = () => {
+            var myHeaders = new Headers();
+            myHeaders.append("x-auth", state.token);
+    
+            var urlencoded = new URLSearchParams();
+            urlencoded.append("id", props._id);
+            urlencoded.append("projectId", props.project);
+    
+            fetch("/api/task", {
+                method: 'DELETE',
+                headers: myHeaders,
+                body: urlencoded,
+            })
+            .then(response => response.json())
+            .then(result => {
+                fetch("/api/user", {
+                    method: 'GET',
+                    headers: myHeaders
+                  })
+                  .then(x => x.json())
+                  .then(y => {
+                      console.log(y)
+                      dispatch({type: "CHANGE_USER", value: y})
+                  })
+            })
         }
 
-        footer img {
-          margin-left: 0.5rem;
-        }
 
-        footer a {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-        }
 
-        a {
-          color: inherit;
-          text-decoration: none;
-        }
+    return (
+        <>
+            <div className="header">
+                {!edit && <input id={props._id} disabled={checked} type="checkbox" checked={checked} onChange={e=> setChecked(e.target.checked)}/>}
+                {edit? <Form type="task" {...props} edit={true} cb={() => setEdit(false)}/>: <label htmlFor={props._id}>{props.task}</label>} 
+                {!edit && !checked && <div className="flex">
+                    <button onClick={()=>setEdit(true)}>edit</button>
+                    <button onClick={remove}>delete</button>
+                </div>}
+            </div>
+            <style jsx>{`
+            .flex {
+                display: flex;
+            }
+            .header {
+                display: flex;
+                justify-content: space-between;
+            }
+            label{
+                color: white;
+                line-height: 30px;
+            }
+            ul {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+            }  
+            button {
+                line-height: 30px;
+            }
+            `}</style>
+        </>
+        
+    )
+}
 
-        .title a {
-          color: #0070f3;
-          text-decoration: none;
-        }
-
-        .title a:hover,
-        .title a:focus,
-        .title a:active {
-          text-decoration: underline;
-        }
-
-        .title {
-          margin: 0;
-          line-height: 1.15;
-          font-size: 4rem;
-        }
-
-        .title,
-        .description {
-          text-align: center;
-        }
-
-        .subtitle {
-          font-size: 2rem;
-        }
-
-        .description {
-          line-height: 1.5;
-          font-size: 1.5rem;
-        }
-
-        code {
-          background: #fafafa;
-          border-radius: 5px;
-          padding: 0.75rem;
-          font-size: 1.1rem;
-          font-family: Menlo, Monaco, Lucida Console, Liberation Mono,
-            DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace;
-        }
-
-        .grid {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-wrap: wrap;
-
-          max-width: 800px;
-          margin-top: 3rem;
-        }
-
-        .card {
-          margin: 1rem;
-          flex-basis: 45%;
-          padding: 1.5rem;
-          text-align: left;
-          color: inherit;
-          text-decoration: none;
-          border: 1px solid #eaeaea;
-          border-radius: 10px;
-          transition: color 0.15s ease, border-color 0.15s ease;
-        }
-
-        .card:hover,
-        .card:focus,
-        .card:active {
-          color: #0070f3;
-          border-color: #0070f3;
-        }
-
-        .card h3 {
-          margin: 0 0 1rem 0;
-          font-size: 1.5rem;
-        }
-
-        .card p {
-          margin: 0;
-          font-size: 1.25rem;
-          line-height: 1.5;
-        }
-
-        .logo {
-          height: 1em;
-        }
-
-        @media (max-width: 600px) {
-          .grid {
-            width: 100%;
-            flex-direction: column;
-          }
-        }
-      `}</style>
-
-      <style jsx global>{`
-        html,
-        body {
-          padding: 0;
-          margin: 0;
-          font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto,
-            Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue,
-            sans-serif;
-        }
-
-        * {
-          box-sizing: border-box;
-        }
-      `}</style>
+const Header = props => 
+    <>
+    <div className="header">
+        <h1>{props.email}</h1>
+        <button onClick={()=>{
+            props.dispatch({type: 'CLEAR_TOKEN'})
+            props.dispatch({type: 'CHANGE_USER', value: null})
+        }}>sign out</button>
     </div>
-  )
+    <style jsx>{`
+    .header {
+        background: black;
+        display: flex;
+        justify-content: space-between;
+    }    
+    h1 {
+        margin: 0;
+        color: white;
+    }
+    button {
+        line-height: 30px;
+    }
+    `}</style>
+    </>
+
+const Projects = props =>
+<>
+    <ul className="flex-container">
+        <li className="flex-item"><Form type="project"/></li>
+        {props.projects?.map((x, i) => <li className="flex-item"><ProjectItem key={i} {...x}/></li>)}
+    </ul>
+    <style jsx>{`
+    .flex-container {
+        padding: 0;
+        margin: 0;
+        list-style: none;
+        display: flex;
+        flex-wrap: wrap;
+    }    
+    .flex-item{
+        background: tomato;
+        width: calc(33% - 18px);
+        margin: 10px;
+        color: white;
+    }
+    `}</style>
+</>
+
+const UserPage = () => {
+    const [state, dispatch] = useStateValue();
+
+    if(state.user){
+        return (
+            <>
+                <style jsx global>{`
+                    *{
+                        font-size: 14px;
+                        line-height: 30px;
+                        font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto, Oxygen,Ubuntu,Cantarell,Fira Sans,Droid Sans,Helvetica Neue, sans-serif;
+                    }
+               body{
+                   margin: 0;
+                   padding: 0;
+               }
+                `}</style>
+                <Header dispatch={dispatch} email={state.user.email}/>
+                
+                <Projects projects={state.projects}/>
+                
+
+            </>
+        )
+    } return null
 }
 
-export async function getServerSideProps(context) {
+const User = () =>         
+    <Dynamic>
+        <UserPage/>
+    </Dynamic>
 
-
-  return {
-    props: { isConnected: false },
-  }
-}
+export default User

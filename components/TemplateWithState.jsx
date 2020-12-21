@@ -10,8 +10,8 @@ const Template = (props) => {
     useEffect(()=>{
         console.log("passou aqui")
         if(state.token)
-            router.push('/user')
-        else if(router.asPath == '/user')
+            router.push('/')
+        else if(router.asPath == '/')
             router.push('/signin')
     }, [state.token])
 
@@ -50,27 +50,6 @@ const Template = (props) => {
             })
         }
     }, [state.user?.projects])
-
-    // useEffect(()=>{
-    //     if(state.projects){
-    //         const p = []
-    //         var myHeaders = new Headers();
-    //         myHeaders.append("x-auth", state.token);
-
-    //         state.projects.forEach(x => {
-    //             x.tasks?.forEach(y => {
-    //                 p.push(fetch(`/api/task?id=${y}`, {
-    //                     method: 'GET',
-    //                     headers: myHeaders
-    //                 })
-    //                 .then(response => response.json()))
-    //             })                
-    //         })
-    //         Promise.all(p).then(x => {
-    //             dispatch({type: 'SET_TASKS', value: x})
-    //         })
-    //     }
-    // }, [state.projects])
 
     return props.children
 }

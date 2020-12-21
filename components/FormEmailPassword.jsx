@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useStateValue } from './State';
+import Link from 'next/link'
 export const FormEmailPassword = (props) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -7,6 +8,7 @@ export const FormEmailPassword = (props) => {
     const [state, dispatch] = useStateValue();
 
     const route = props.signup ? 'signup' : 'signin'
+    const otherRoute = !props.signup ? 'signup' : 'signin'
 
     const submit = e => {
         e.preventDefault();
@@ -36,11 +38,17 @@ export const FormEmailPassword = (props) => {
     };
 
     return (
-        <form onSubmit={submit}>
-            <input type="text" onChange={e => setEmail(e.target.value)} value={email} />
-            <input type="password" onChange={e => setPassword(e.target.value)} value={password} />
-            <input type="submit" value={route} />
-            {errMsg && <p>{errMsg}</p>}
-        </form>
+        <>
+            <form onSubmit={submit}>
+                <input type="text" onChange={e => setEmail(e.target.value)} value={email} />
+                <input type="password" onChange={e => setPassword(e.target.value)} value={password} />
+                <input type="submit" value={route} />
+                {errMsg && <p>{errMsg}</p>}
+            </form>
+            <Link href={`/${otherRoute}`}><a>{otherRoute}</a></Link>
+            <style jsx>{`
+            
+            `}</style>
+        </>
     );
 };
